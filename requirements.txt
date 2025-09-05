@@ -3,4 +3,5 @@ gspread
 pandas
 oauth2client
 passlib[bcrypt]
+bcrypt==4.0.1
 gunicorn
