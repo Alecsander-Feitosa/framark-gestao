@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestão Framark</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <aside class="sidebar">
+            <div class="logo-container">
+                <img src="{{ url_for('static', filename='images/logo_remove.png') }}" alt="Logo Framark" class="logo">
+            </div>
+            <nav class="sidebar-nav">
+                <button class="sidebar-btn" data-tab="dashboard-tab">Dashboard</button>
+                <button class="sidebar-btn" data-tab="create-order-tab">Criar Pedido</button>
+                <button class="sidebar-btn" data-tab="verify-orders-tab">Verificar Pedidos</button>
+                <button class="sidebar-btn {% if user_profile == 'colaborador' %}disabled{% endif %}" data-tab="manage-status-tab" {% if user_profile == 'colaborador' %}disabled{% endif %}>Gerenciar Status</button>
+                <button class="sidebar-btn disabled">Estoque</button>
+                <button class="sidebar-btn disabled">Clientes</button>
+            </nav>
+            <div class="sidebar-footer">
+                <a href="/logout" class="logout-btn">Sair</a>
+                <p>Data: <span id="current-date"></span></p>
+            </div>
+        </aside>
+
+        <main class="content">
+            <div class="tab-view">
+                <div class="tab-header">
+                    <button class="tab-btn active" data-tab="dashboard-tab">Dashboard</button>
+                    <button class="tab-btn" data-tab="create-order-tab">Criar Pedido</button>
+                    <button class="tab-btn" data-tab="verify-orders-tab">Verificar Pedidos</button>
+                    <button class="tab-btn" data-tab="manage-status-tab">Gerenciar Status</button>
+                </div>
+                
+                <div class="tab-content active" id="dashboard-tab">
+                    <div class="metrics-container">
+                        <div class="metric-card" data-filter="Todos">
+                            <span class="metric-value" id="total-pedidos">0</span>
+                            <span class="metric-label">Número de Pedidos</span>
+                        </div>
+                        <div class="metric-card" data-filter="Pronto">
+                            <span class="metric-value" id="pedidos-prontos">0</span>
+                            <span class="metric-label">Prontos</span>
+                        </div>
+                        <div class="metric-card" data-filter="Em Produção">
+                            <span class="metric-value" id="pedidos-em-producao">0</span>
+                            <span class="metric-label">Em Produção</span>
+                        </div>
+                        <div class="metric-card" data-filter="Em Atenção">
+                            <span class="metric-value" id="pedidos-em-atencao">0</span>
+                            <span class="metric-label">Em Atenção</span>
+                        </div>
+                        <div class="metric-card" data-filter="Atrasados">
+                            <span class="metric-value" id="pedidos-atrasados">0</span>
+                            <span class="metric-label">Atrasados</span>
+                        </div>
+                    </div>
+                    <div class="charts-container">
+                        <div class="chart-box">
+                            <canvas id="modelChart"></canvas>
+                        </div>
+                        <div class="chart-box">
+                            <canvas id="statusChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="create-order-tab">
+                    <div class="form-container">
+                        <h2>Criar Pedido</h2>
+                        <div class="form-row">
+                            <label>ID do Pedido:</label>
+                            <input type="text" id="order-id" placeholder="ID do Pedido">
+                            <button id="generate-id-btn">Gerar ID</button>
+                        </div>
+                        <div class="form-row">
+                            <label>Nome do Pedido:</label>
+                            <input type="text" id="order-name" placeholder="Nome do pedido">
+                        </div>
+                        <div class="form-row">
+                            <label>Modelo:</label>
+                            <input type="text" id="order-model" placeholder="Modelo do produto">
+                        </div>
+                        <div class="form-row">
+                            <label>Detalhes do Produto:</label>
+                            <textarea id="product-details" placeholder="Detalhes do pedido"></textarea>
+                        </div>
+                        <div class="form-row">
+                            <label>Link do Drive:</label>
+                            <input type="text" id="drive-link" placeholder="Link do Google Drive">
+                        </div>
+                        <div class="form-row">
+                            <label>Status:</label>
+                            <select id="order-status">
+                                <option>Entrada/Designer</option>
+                                <option>Separação de peças</option>
+                                <option>Costura</option>
+                                <option>Pintura</option>
+                                <option>Bordado</option>
+                                <option>Finalização</option>
+                                <option>Pronto</option>
+                            </select>
+                        </div>
+                        <div class="form-row">
+                            <label>Data de Entrada:</label>
+                            <input type="date" id="entry-date" placeholder="DD/MM/AAAA">
+                        </div>
+                        <div class="form-row">
+                            <label>Data de Saída:</label>
+                            <input type="date" id="exit-date" placeholder="DD/MM/AAAA">
+                        </div>
+                        <button class="create-btn">Criar Pedido</button>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="verify-orders-tab">
+                    <h2>Verificar Pedidos</h2>
+                    <div class="table-actions">
+                        <input type="text" id="search-input" placeholder="Pesquisar Pedido">
+                        <select id="status-filter">
+                            <option value="Todos">Todos</option>
+                            <option>Entrada/Designer</option>
+                            <option>Separação de peças</option>
+                            <option>Costura</option>
+                            <option>Pintura</option>
+                            <option>Bordado</option>
+                            <option>Finalização</option>
+                            <option>Pronto</option>
+                        </select>
+                        <button id="search-btn">Pesquisar</button>
+                        <button id="filter-btn">Filtrar</button>
+                        <button id="reload-btn">Recarregar Dados</button>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Ids</th>
+                                    <th>Nome do pedido</th>
+                                    <th>Modelo</th>
+                                    <th>Detalhes do Produto</th>
+                                    <th>Link do Drive</th>
+                                    <th>Status</th>
+                                    <th>Data de Entrada</th>
+                                    <th>Data de Saída</th>
+                                </tr>
+                            </thead>
+                            <tbody id="orders-table-body">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="tab-content" id="manage-status-tab">
+                    <h2>Gerenciar Status</h2>
+                    <div class="manage-search-actions">
+                        <input type="text" id="manage-search-input" placeholder="Pesquisar Pedido (ID/Nome)">
+                        <button id="manage-search-btn">Pesquisar</button>
+                    </div>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Selecionar</th>
+                                    <th>Ids</th>
+                                    <th>Nome do pedido</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="manage-table-body">
+                                </tbody>
+                        </table>
+                    </div>
+                    <div class="manage-status-panel">
+                        <h3>Atualizar Status Selecionado</h3>
+                        <label for="new-status-manage">Novo Status:</label>
+                        <select id="new-status-manage">
+                            <option>Entrada/Designer</option>
+                            <option>Separação de peças</option>
+                            <option>Costura</option>
+                            <option>Pintura</option>
+                            <option>Bordado</option>
+                            <option>Finalização</option>
+                            <option>Pronto</option>
+                        </select>
+                        <button id="update-status-btn">Atualizar Status</button>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>

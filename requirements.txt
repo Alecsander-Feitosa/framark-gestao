@@ -1,0 +1,6 @@
+flask
+gspread
+pandas
+oauth2client
+passlib[bcrypt]
+gunicorn
